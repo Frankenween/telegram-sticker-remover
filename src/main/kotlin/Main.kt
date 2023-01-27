@@ -2,6 +2,7 @@ import eu.vendeli.tgbot.TelegramBot
 import eu.vendeli.tgbot.api.deleteMessage
 import handlers.banSticker
 import handlers.unbanSticker
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import kotlin.system.exitProcess
@@ -9,6 +10,11 @@ import kotlin.system.exitProcess
 fun main(args: Array<String>) = runBlocking {
     val botToken = readToken()
     val bot = TelegramBot(botToken)
+
+    launch {
+        BotDatabase.tryInit() // maybe cached?
+        BotDatabase.saveData() // infinite save
+    }
 
     bot.handleUpdates {
         onMyChatMember {

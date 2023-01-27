@@ -3,41 +3,49 @@ package handlers
 import eu.vendeli.tgbot.types.Message
 import eu.vendeli.tgbot.types.Sticker
 import eu.vendeli.tgbot.types.User
+import kotlinx.serialization.Serializable
 
 interface RestrictionPolicy {
     fun isRestricted(msg: Message): Boolean
 }
 
-class StickerRestriction(
-    private val sticker: Sticker,
-    private val pack: Boolean = false
-): RestrictionPolicy {
+@Serializable
+class StickerRestriction: RestrictionPolicy {
+    private val pack: Boolean
+    private val setName: String?
+    private val fileUniqueId: String
+    constructor(sticker: Sticker, pack: Boolean = false) {
+        this.pack = pack
+        setName = sticker.setName
+        fileUniqueId = sticker.fileUniqueId
+    }
     override fun isRestricted(msg: Message): Boolean {
         val curSticker = msg.sticker ?: return false
-        return (curSticker.fileUniqueId == sticker.fileUniqueId) ||
-                (pack && curSticker.setName == sticker.setName)
+        return (curSticker.fileUniqueId == fileUniqueId) ||
+                (pack && curSticker.setName == setName)
     }
 
     override fun equals(other: Any?): Boolean {
         if (other !is StickerRestriction) return false
-        return (pack && other.pack && sticker.setName == other.sticker.setName)
-                || (pack == other.pack && sticker.fileUniqueId == other.sticker.fileUniqueId)
+        return (pack && other.pack && setName == other.setName)
+                || (pack == other.pack && fileUniqueId == other.fileUniqueId)
     }
 
     override fun hashCode(): Int {
         return if (pack) {
-            sticker.setName.hashCode()
+            setName.hashCode()
         } else {
-            sticker.fileUniqueId.hashCode()
+            fileUniqueId.hashCode()
         }
     }
 }
 
 
-class ViaRestriction(user: User): RestrictionPolicy {
+@Serializable
+class ViaRestriction: RestrictionPolicy {
     private val botId: Long
 
-    init {
+    constructor(user: User) {
         botId = user.id
     }
 
@@ -54,6 +62,7 @@ class ViaRestriction(user: User): RestrictionPolicy {
     }
 }
 
+@Serializable
 class Restrictions: RestrictionPolicy {
     private val stickers = HashSet<StickerRestriction>()
     private val viaBots = HashSet<ViaRestriction>()
